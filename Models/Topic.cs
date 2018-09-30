@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace regents_new.Models
 {
+    [Serializable]
     public class Topic
     {
         public Int32 Id { get; set; }
@@ -13,6 +14,8 @@ namespace regents_new.Models
 
         public Int32 UnitId { get; set; }
 
+        public String UnitName { get; set; }
+
         public Topic () { }
 
         public Topic (DataAccess.Entities.Topic topic)
@@ -20,6 +23,7 @@ namespace regents_new.Models
             this.Id = topic.Id;
             this.Description = topic.Description;
             this.UnitId = topic.UnitId;
+            this.UnitName = topic.Unit.Description;
         }
     }
 }

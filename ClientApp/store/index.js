@@ -6,24 +6,54 @@ Vue.use(Vuex)
 
 // STATE
 const state = {
-  counter: 1,
   courses: null,
   units: null,
-  topics: null,
-  tipicsTotal: 0,
-  unitsTotal: 0,
-  coursesTotal: 0
+  topics: null
+}
+
+function deleteCourse (state, course) {
+  // delete related units
+  course.units.forEach(u => {
+    let unit = state.units.filter(x => x.id == u.id)
+    if (unit.length) {
+      deleteUnit(state, unit[0])
+    }
+  })
+
+  // delete course from state
+  const index = state.courses.indexOf(course)
+
+  if (index > -1) {
+    state.courses.splice(index, 1)
+  }
+}
+
+function deleteUnit (state, unit) {
+  unit.topics.forEach(t => {
+    let topic = state.topics.filter(x => x.id == t.id)
+    if (topic.length) {
+      deleteTopic(state, topic[0])
+    }
+  })
+
+  const index = state.units.indexOf(unit)
+
+  if (index > -1) {
+    state.units.splice(index, 1)
+  }
+}
+
+function deleteTopic (state, topic) {
+  const index = state.topics.indexOf(topic)
+  state.topics.splice(index, 1)
 }
 
 // MUTATIONS
 const mutations = {
-  async fetchCourses (state, obj) {
+  async fetchCourses (state) {
     try {
-      var from = obj.from
-      var to = obj.to
-      let response = await axios.get(`/api/courses?from=${from}&to=${to}`)
-      state.courses = response.data.courses
-      state.coursesTotal = response.data.total
+      let response = await axios.get(`/api/courses`)
+      state.courses = response.data
     } catch (err) {
       window.alert(err)
       console.error(err)
@@ -34,8 +64,9 @@ const mutations = {
       let response = await axios.delete(`/api/courses/${id}`)
       if (response.data) {
         const course = state.courses.filter(x => x.id === id)
-        const index = state.courses.indexOf(course[0])
-        state.courses.splice(index, 1)
+        if (course.length) {
+          deleteCourse(state, course[0])
+        }
       }
     } catch (err) {
       window.alert(err)
@@ -53,13 +84,24 @@ const mutations = {
       console.error(err)
     }
   },
+  async editCourse (state, obj) {
+    try {
+      let response = await axios.put('/api/courses', obj)
+      if (response.data) {
+        const course = state.courses.filter(x => x.id === obj.id);
+        if (course.length) {
+          course[0].description = obj.description
+        }
+      }
+    } catch (err) {
+      window.alert(err)
+      console.error(err)
+    }
+  },
   async fetchUnits (state, obj) {
     try {
-      var from = obj.from
-      var to = obj.to
-      let response = await axios.get(`/api/units?from=${from}&to=${to}`)
-      state.units = response.data.units
-      state.unitsTotal = response.data.total
+      let response = await axios.get(`/api/units`)
+      state.units = response.data
     } catch (err) {
       window.alert(err)
       console.error(err)
@@ -70,8 +112,24 @@ const mutations = {
       let response = await axios.delete(`/api/units/${id}`)
       if (response.data) {
         const unit = state.units.filter(x => x.id === id)
-        const index = state.units.indexOf(unit[0])
-        state.units.splice(index, 1)
+        if (unit.length) {
+          deleteUnit(state, unit[0])
+        }
+      }
+    } catch (err) {
+      window.alert(err)
+      console.error(err)
+    }
+  },
+  async editUnit (state, obj) {
+    try {
+      let response = await axios.put('/api/units', obj)
+      if (response.data) {
+        const unit = state.units.filter(x => x.id === obj.id);
+        if (unit.length) {
+          unit[0].description = obj.description
+          unit[0].sequence = obj.sequence
+        }
       }
     } catch (err) {
       window.alert(err)
@@ -83,19 +141,20 @@ const mutations = {
       let response = await axios.post(`/api/units/`, obj)
       if (response.data) {
         state.units.push(response.data)
+        const course = state.courses.filter(x => x.id === response.data.courseId)
+        if (course.length) {
+          course[0].units.push(response.data)
+        }
       }
     } catch (err) {
       window.alert(err)
       console.error(err)
     }
   },
-  async fetchTopics (state, obj) {
+  async fetchTopics (state) {
     try {
-      var from = obj.from
-      var to = obj.to
-      let response = await axios.get(`/api/topics?from=${from}&to=${to}`)
-      state.topics = response.data.topics
-      state.topicsTotal = response.data.total
+      let response = await axios.get(`/api/topics`)
+      state.topics = response.data
     } catch (err) {
       window.alert(err)
       console.error(err)
@@ -106,8 +165,9 @@ const mutations = {
       let response = await axios.delete(`/api/topics/${id}`)
       if (response.data) {
         const topic = state.topics.filter(x => x.id === id)
-        const index = state.topics.indexOf(topic[0])
-        state.topics.splice(index, 1)
+        if (topic.length) {
+          deleteTopic(state, topic[0])
+        }
       }
     } catch (err) {
       window.alert(err)
@@ -119,6 +179,24 @@ const mutations = {
       let response = await axios.post(`/api/topics/`, obj)
       if (response.data) {
         state.topics.push(response.data)
+        const unit = state.units.filter(x => x.id === response.data.unitId)
+        if (unit.length) {
+          unit[0].topics.push(response.data)
+        }
+      }
+    } catch (err) {
+      window.alert(err)
+      console.error(err)
+    }
+  },
+  async editTopic (state, obj) {
+    try {
+      let response = await axios.put('/api/topics', obj)
+      if (response.data) {
+        const topic = state.topics.filter(x => x.id === obj.id);
+        if (topic.length) {
+          topic[0].description = obj.description
+        }
       }
     } catch (err) {
       window.alert(err)
@@ -138,6 +216,9 @@ const actions = ({
   addCourse ({ commit }, obj) {
     commit('addCourse', obj)
   },
+  editCourse ({ commit }, obj) {
+    commit('editCourse', obj)
+  },
   fetchUnits ({ commit }, obj) {
     commit('fetchUnits', obj)
   },
@@ -147,6 +228,9 @@ const actions = ({
   addUnit ({ commit }, obj) {
     commit('addUnit', obj)
   },
+  editUnit ({ commit }, obj) {
+    commit('editUnit', obj)
+  },
   fetchTopics ({ commit }, obj) {
     commit('fetchTopics', obj)
   },
@@ -155,6 +239,9 @@ const actions = ({
   },
   addTopic ({ commit }, obj) {
     commit('addTopic', obj)
+  },
+  editTopic ({ commit }, obj) {
+
   }
 })
 

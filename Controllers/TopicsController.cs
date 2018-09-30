@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccess.Interfaces;
 using DataAccess.Repositories;
 using regents_new.Models;
+using AutoMapper;
 
 namespace regents_new.Controllers
 {
@@ -15,46 +16,25 @@ namespace regents_new.Controllers
     public class TopicsController : ControllerBase
     {
         public readonly IUnitOfWork unitOfWork;
+        public readonly IMapper mapper;
 
-        public TopicsController()
+        public TopicsController(IMapper mapper)
         {
             this.unitOfWork = new UnitOfWork(new DataAccess.AppContext());
+            this.mapper = mapper;
         }
 
         // GET: api/Topics
         [HttpGet]
-        public IActionResult Get([FromQuery(Name = "from")] int from = 0, [FromQuery(Name = "to")] int to = 4)
+        public IActionResult Get()
         {
-            var quantity = to - from;
-
-            // We should also avoid going too far in the list.
-            if (quantity <= 0)
-            {
-                return BadRequest("You cannot have the 'to' parameter higher than 'from' parameter.");
-            }
-
-            if (from < 0)
-            {
-                return BadRequest("You cannot go in the negative with the 'from' parameter");
-            }
-
             var topics = this.unitOfWork.Topics.GetAll();
 
-            var topicOnPage = topics.Skip(from).Take(quantity).ToArray();
             var total = topics.Count();
 
-            var model = new List<Topic>();
+            List<Topic> model = mapper.Map<IEnumerable<DataAccess.Entities.Topic>, List<Topic>>(topics);
 
-            foreach (var item in topicOnPage)
-            {
-                model.Add(new Topic(item));
-            }
-
-            return Ok(new
-            {
-                Total = total,
-                Topics = model
-            });
+            return Ok(model);
         }
 
         // GET: api/Topics/5
@@ -77,13 +57,29 @@ namespace regents_new.Controllers
             this.unitOfWork.Topics.Add(topicEntity);
             this.unitOfWork.Complete();
 
+            if (topicEntity.Unit == null)
+            {
+                topicEntity.Unit = this.unitOfWork.Units.Get(topicEntity.UnitId);
+            }
+
             return Ok(new Topic(topicEntity));
         }
 
         // PUT: api/Topics/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        public IActionResult Put(Topic topic)
         {
+            var result = 0;
+            var topicDb = this.unitOfWork.Topics.SingleOrDefault(x => x.Id == topic.Id);
+            if (topicDb != null)
+            {
+                if (topicDb.Description != topic.Description)
+                {
+                    topicDb.Description = topic.Description;
+                    result = this.unitOfWork.Complete();
+                }
+            }
+            return Ok(result > 0);
         }
 
         // DELETE: api/ApiWithActions/5

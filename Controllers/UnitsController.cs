@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccess.Interfaces;
 using DataAccess.Repositories;
 using regents_new.Models;
+using AutoMapper;
 
 namespace regents_new.Controllers
 {
@@ -15,46 +16,25 @@ namespace regents_new.Controllers
     public class UnitsController : ControllerBase
     {
         public readonly IUnitOfWork unitOfWork;
+        public readonly IMapper mapper;
 
-        public UnitsController()
+        public UnitsController(IMapper mapper)
         {
             this.unitOfWork = new UnitOfWork(new DataAccess.AppContext());
+            this.mapper = mapper;
         }
 
         // GET: api/Units
         [HttpGet]
-        public IActionResult Get([FromQuery(Name = "from")] int from = 0, [FromQuery(Name = "to")] int to = 4)
+        public IActionResult Get()
         {
-            var quantity = to - from;
-
-            // We should also avoid going too far in the list.
-            if (quantity <= 0)
-            {
-                return BadRequest("You cannot have the 'to' parameter higher than 'from' parameter.");
-            }
-
-            if (from < 0)
-            {
-                return BadRequest("You cannot go in the negative with the 'from' parameter");
-            }
-
             var units = this.unitOfWork.Units.GetAll();
 
-            var unitOnPage = units.Skip(from).Take(quantity).ToArray();
             var total = units.Count();
 
-            var model = new List<Unit>();
+            List<Unit> model = mapper.Map<IEnumerable<DataAccess.Entities.Unit>, List<Unit>>(units);
 
-            foreach (var item in unitOnPage)
-            {
-                model.Add(new Unit(item));
-            }
-
-            return Ok(new
-            {
-                Total = total,
-                Units = model
-            });
+            return Ok(model);
         }
 
         // GET: api/Units/5
@@ -78,13 +58,30 @@ namespace regents_new.Controllers
             this.unitOfWork.Units.Add(unitEntity);
             this.unitOfWork.Complete();
 
+            if (unitEntity.Course == null)
+            {
+                unitEntity.Course = this.unitOfWork.Courses.Get(unitEntity.CourseId);
+            }
+
             return Ok(new Unit(unitEntity));
         }
 
         // PUT: api/Units/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        public IActionResult Put(Unit unit)
         {
+            var result = 0;
+            var unitDb = this.unitOfWork.Units.SingleOrDefault(x => x.Id == unit.Id);
+            if (unitDb != null)
+            {
+                if (unitDb.Description != unit.Description)
+                {
+                    unitDb.Description = unit.Description;
+                    unitDb.Sequence = unit.Sequence;
+                    result = this.unitOfWork.Complete();
+                }
+            }
+            return Ok(result > 0);
         }
 
         // DELETE: api/ApiWithActions/5

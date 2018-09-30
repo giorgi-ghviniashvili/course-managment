@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccess.Repositories;
 using DataAccess.Interfaces;
 using regents_new.Models;
+using AutoMapper;
 
 namespace regents_new.Controllers
 {
@@ -15,45 +16,25 @@ namespace regents_new.Controllers
     public class CoursesController : ControllerBase
     {
         public readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
 
-        public CoursesController()
+        public CoursesController(IMapper mapper)
         {
             this.unitOfWork = new UnitOfWork(new DataAccess.AppContext());
+            this.mapper = mapper;
         }
 
         // GET: api/Courses
         [HttpGet]
-        public IActionResult Get([FromQuery(Name = "from")] int from = 0, [FromQuery(Name = "to")] int to = 4)
+        public IActionResult Get()
         {
-            var quantity = to - from;
-
-            // We should also avoid going too far in the list.
-            if (quantity <= 0)
-            {
-                return BadRequest("You cannot have the 'to' parameter higher than 'from' parameter.");
-            }
-
-            if (from < 0)
-            {
-                return BadRequest("You cannot go in the negative with the 'from' parameter");
-            }
-
             var courses = this.unitOfWork.Courses.GetAll();
-
-            var courseOnPage = courses.Skip(from).Take(quantity).ToArray();
+            
             var total = courses.Count();
 
-            var model = new List<Course>();
+            List<Course> model = mapper.Map<List<DataAccess.Entities.Course>, List<Course>>(courses.ToList());
 
-            foreach (var item in courseOnPage)
-            {
-                model.Add(new Course(item));
-            }
-
-            return Ok(new {
-                Total = total,
-                Courses = model
-            });
+            return Ok(model);
         }
 
         // GET: api/Courses/5
@@ -79,10 +60,21 @@ namespace regents_new.Controllers
             return Ok(new Course(courseEntity));
         }
 
-        // PUT: api/Courses/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // PUT: api/Courses
+        [HttpPut]
+        public IActionResult Put(Course course)
         {
+            var result = 0;
+            var courseDb = this.unitOfWork.Courses.SingleOrDefault(x => x.Id == course.Id);
+            if (courseDb != null)
+            {
+                if (courseDb.Description != course.Description)
+                {
+                    courseDb.Description = course.Description;
+                    result = this.unitOfWork.Complete();
+                }
+            }
+            return Ok(result > 0);
         }
 
         // DELETE: api/Courses/5

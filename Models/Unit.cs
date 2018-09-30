@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace regents_new.Models
 {
+    [Serializable]
     public class Unit
     {
         public Int32 Id { get; set; }
@@ -15,6 +16,10 @@ namespace regents_new.Models
 
         public Int32 CourseId { get; set; }
 
+        public String CourseName { get; set; }
+
+        public List<Topic> Topics { get; set; }
+
         public Unit () { }
 
         public Unit(DataAccess.Entities.Unit unit)
@@ -23,6 +28,17 @@ namespace regents_new.Models
             this.Sequence = unit.Sequence;
             this.Description = unit.Description;
             this.CourseId = unit.CourseId;
+            this.CourseName = unit.Course.Description;
+
+            this.Topics = new List<Topic>();
+
+            //if (unit.Topics != null)
+            //{
+            //    foreach (var topic in unit.Topics)
+            //    {
+            //        this.Topics.Add(new Topic(topic));
+            //    }
+            //}
         }
     }
 }
