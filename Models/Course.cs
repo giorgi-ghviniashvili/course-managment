@@ -22,14 +22,7 @@ namespace regents_new.Models
             this.Description = course.Description;
 
             this.Units = new List<Unit>();
-
-            //if (course.Units != null)
-            //{
-            //    foreach (DataAccess.Entities.Unit unit in course.Units)
-            //    {
-            //        this.Units.Add(new Unit(unit));
-            //    }
-            //}
+           
         }
     }
 }

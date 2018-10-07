@@ -30,8 +30,6 @@ namespace regents_new.Controllers
         {
             var topics = this.unitOfWork.Topics.GetAll();
 
-            var total = topics.Count();
-
             List<Topic> model = mapper.Map<IEnumerable<DataAccess.Entities.Topic>, List<Topic>>(topics);
 
             return Ok(model);

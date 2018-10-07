@@ -31,14 +31,6 @@ namespace regents_new.Models
             this.CourseName = unit.Course.Description;
 
             this.Topics = new List<Topic>();
-
-            //if (unit.Topics != null)
-            //{
-            //    foreach (var topic in unit.Topics)
-            //    {
-            //        this.Topics.Add(new Topic(topic));
-            //    }
-            //}
         }
     }
 }
