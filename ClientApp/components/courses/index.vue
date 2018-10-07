@@ -45,7 +45,7 @@
             </button>
           </template>
         </b-table>
-        <pagination v-if="courses.length > 0" :totalRows="totalCourses" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
+        <pagination v-if="courses.length > 0 && currentPage" :totalRows="totalCourses" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
       </div>
 
       <div>
@@ -84,7 +84,7 @@
         { key: 'actions', 'class': 'd-lg-flex justify-content-lg-end align-items-center' }
       ],
       description: '',
-      currentPage: 1,
+      currentPage: null,
       perPage: 5,
       sortDirection: 'asc',
       sortDesc: false,
@@ -98,14 +98,21 @@
   },
   computed: {
     ...mapState({
+      currentPageCourses: state => state.currentPageCourses,
       totalCourses: state => state.coursesTotal,
       courses: state => state.courses
     })
   },
   methods: {
-    ...mapActions(['fetchCourses', 'removeCourse', 'addCourse', 'editCourse']),
+    ...mapActions(['fetchCourses', 'removeCourse', 'addCourse', 'editCourse', 'setCurrentPage']),
     coursesProvider () {
       return this.courses ? this.courses : []
+    },
+    setPage (page) {
+      this.setCurrentPage({
+        prop: 'currentPageCourses',
+        page: page
+      })
     },
     async loadPage (page) {
       var from = (page - 1) * (this.perPage)
@@ -152,6 +159,7 @@
   watch: {
     async currentPage () {
       await this.loadPage(this.currentPage)
+      this.setPage(this.currentPage)
     },
     courses () {
       if (this.$refs && this.$refs.table) {
@@ -160,6 +168,7 @@
     }
   },
   async mounted() {
+    this.currentPage = this.currentPageCourses
     if (!this.courses) {
       this.loadPage(1)
     }

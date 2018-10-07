@@ -50,7 +50,7 @@
             </button>
           </template>
         </b-table>
-        <pagination v-if="units.length > 0" :totalRows="totalUnits" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
+        <pagination v-if="units.length > 0 && currentPage" :totalRows="totalUnits" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
       </div>
       <div>
         <!-- Modal Component -->
@@ -111,7 +111,7 @@
         { key: 'actions', 'class': 'd-lg-flex justify-content-lg-end align-items-center' }
       ],
       description: '',
-      currentPage: 1,
+      currentPage: null,
       perPage: 5,
       sortDirection: 'asc',
       sortDesc: false,
@@ -130,15 +130,22 @@
   },
   computed: {
     ...mapState({
+      currentPageUnits: state => state.currentPageUnits,
       totalUnits: state => state.unitsTotal,
       units: state => state.units,
       coursesAll: state => state.coursesAll
     })
   },
   methods: {
-    ...mapActions(['fetchUnits', 'getAllCourses', 'removeUnit', 'addUnit', 'editUnit']),
+    ...mapActions(['setCurrentPage', 'fetchUnits', 'getAllCourses', 'removeUnit', 'addUnit', 'editUnit']),
     unitsProvider () {
       return this.units ? this.units : []
+    },
+    setPage (page) {
+      this.setCurrentPage({
+        prop: 'currentPageUnits',
+        page: page
+      })
     },
     async loadPage (page) {
       var from = (page - 1) * (this.perPage)
@@ -191,6 +198,7 @@
   watch: {
     async currentPage () {
       await this.loadPage(this.currentPage)
+      this.setPage(this.currentPage)
     },
     units () {
       if (this.$refs && this.$refs.table) {
@@ -199,6 +207,7 @@
     }
   },
   async mounted() {
+    this.currentPage = this.currentPageUnits
     if (!this.units) {
       this.loadPage(1)
     }

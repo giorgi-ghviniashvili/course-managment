@@ -14,7 +14,10 @@ const state = {
   unitsAll: null,
   topicsTotal: 0,
   unitsTotal: 0,
-  coursesTotal: 0
+  coursesTotal: 0,
+  currentPageCourses: 1,
+  currentPageUnits: 1,
+  currentPageTopics: 1
 }
 
 function deleteCourse(state, course) {
@@ -31,7 +34,6 @@ function deleteCourse(state, course) {
     state.courses.splice(index, 1)
   }
 }
-
 function deleteUnit(state, unit) {
   const topics = state.topics.filter(x => x.unitId === unit.id)
   topics.forEach(t => {
@@ -44,7 +46,6 @@ function deleteUnit(state, unit) {
     state.units.splice(index, 1)
   }
 }
-
 function deleteTopic (state, topic) {
   const index = state.topics.indexOf(topic)
   state.topics.splice(index, 1)
@@ -227,6 +228,9 @@ const mutations = {
       window.alert(err)
       console.error(err)
     }
+  },
+  setCurrentPage(state, obj) {
+    state[obj.prop] = obj.page
   }
 }
 
@@ -273,6 +277,9 @@ const actions = ({
   },
   getAllUnits ({ commit }) {
     commit('getAllUnits')
+  },
+  setCurrentPage ({ commit }, obj) {
+    commit('setCurrentPage', obj)
   }
 })
 

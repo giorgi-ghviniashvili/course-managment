@@ -45,7 +45,7 @@
             </button>
           </template>
         </b-table>
-        <pagination v-if="topics.length > 0" :totalRows="totalTopics" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
+        <pagination v-if="topics.length > 0 && currentPage" :totalRows="totalTopics" :currentPage.sync="currentPage" :perPage.sync="perPage"></pagination>
       </div>
       <div>
         <!-- Modal Component -->
@@ -87,7 +87,7 @@ import pagination from '../common/pagination.vue'
         { key: 'actions', 'class': 'd-lg-flex justify-content-lg-end align-items-center' }
       ],
       description: '',
-      currentPage: 1,
+      currentPage: null,
       perPage: 5,
       sortDirection: 'asc',
       sortDesc: false,
@@ -97,16 +97,24 @@ import pagination from '../common/pagination.vue'
   },
   computed: {
     ...mapState({
+      currentPageTopics: state => state.currentPageTopics,
       totalTopics: state => state.topicsTotal,
       topics: state => state.topics,
       unitsAll: state => state.unitsAll
     })
   },
   methods: {
-    ...mapActions(['fetchTopics', 'getAllUnits', 'removeTopic', 'addTopic', 'editTopic']),
+    ...mapActions(['setCurrentPage', 'fetchTopics', 'getAllUnits', 'removeTopic', 'addTopic', 'editTopic']),
 
     topicsProvider () {
       return this.topics ? this.topics : []
+    },
+
+    setPage (page) {
+      this.setCurrentPage({
+        prop: 'currentPageTopics',
+        page: page
+      })
     },
 
     async loadPage (page) {
@@ -157,6 +165,7 @@ import pagination from '../common/pagination.vue'
   watch: {
     async currentPage () {
       await this.loadPage(this.currentPage)
+      this.setPage(this.currentPage)
     },
     topics () {
       if (this.$refs && this.$refs.table) {
@@ -165,6 +174,7 @@ import pagination from '../common/pagination.vue'
     }
   },
   async mounted() {
+    this.currentPage = this.currentPageTopics
     if (!this.topics) {
       this.loadPage(1)
     }
