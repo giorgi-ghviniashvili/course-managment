@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccess.Repositories;
 using DataAccess.Interfaces;
 using regents_new.Models;
+using AutoMapper;
 
 namespace regents_new.Controllers
 {
@@ -15,10 +16,12 @@ namespace regents_new.Controllers
     public class CoursesController : ControllerBase
     {
         public readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
 
-        public CoursesController()
+        public CoursesController(IMapper mapper)
         {
             this.unitOfWork = new UnitOfWork(new DataAccess.AppContext());
+            this.mapper = mapper;
         }
 
         // GET: api/Courses
@@ -38,20 +41,12 @@ namespace regents_new.Controllers
                 return BadRequest("You cannot go in the negative with the 'from' parameter");
             }
 
-            var courses = this.unitOfWork.Courses.GetAll();
+            var courseOnPage = this.unitOfWork.Courses.GetCoursePage(from, quantity);
 
-            var courseOnPage = courses.Skip(from).Take(quantity).ToArray();
-            var total = courses.Count();
-
-            var model = new List<Course>();
-
-            foreach (var item in courseOnPage)
-            {
-                model.Add(new Course(item));
-            }
+            List<Course> model = mapper.Map<IEnumerable<DataAccess.Entities.Course>, List<Course>>(courseOnPage.PageItems);
 
             return Ok(new {
-                Total = total,
+                courseOnPage.Total,
                 Courses = model
             });
         }
@@ -79,10 +74,21 @@ namespace regents_new.Controllers
             return Ok(new Course(courseEntity));
         }
 
-        // PUT: api/Courses/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // PUT: api/Courses
+        [HttpPut]
+        public IActionResult Put(Course course)
         {
+            var result = 0;
+            var courseDb = this.unitOfWork.Courses.SingleOrDefault(x => x.Id == course.Id);
+            if (courseDb != null)
+            {
+                if (courseDb.Description != course.Description)
+                {
+                    courseDb.Description = course.Description;
+                    result = this.unitOfWork.Complete();
+                }
+            }
+            return Ok(result > 0);
         }
 
         // DELETE: api/Courses/5
@@ -93,9 +99,11 @@ namespace regents_new.Controllers
             var objectAffected = 0;
             if (course != null)
             {
-                foreach (var unit in course.Units)
+                var units = this.unitOfWork.Units.GetByCourseId(course.Id);
+                foreach (var unit in units)
                 {
-                    foreach (var topic in unit.Topics)
+                    var topics = this.unitOfWork.Topics.GetByUnitId(unit.Id);
+                    foreach (var topic in topics)
                     {
                         this.unitOfWork.Topics.Remove(topic);
                     }

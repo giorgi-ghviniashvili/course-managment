@@ -15,14 +15,21 @@ namespace regents_new.Models
 
         public Int32 CourseId { get; set; }
 
+        public String CourseName { get; set; }
+
+        public List<Topic> Topics { get; set; }
+
         public Unit () { }
 
-        public Unit(DataAccess.Entities.Unit unit)
+        public Unit(DataAccess.Entities.Unit unit, DataAccess.Entities.Course course)
         {
             this.Id = unit.Id;
             this.Sequence = unit.Sequence;
             this.Description = unit.Description;
             this.CourseId = unit.CourseId;
+            this.CourseName = course != null ? course.Description : "";
+
+            this.Topics = new List<Topic>();
         }
     }
 }

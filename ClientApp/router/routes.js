@@ -1,6 +1,6 @@
-import Courses from 'components/courses'
-import Units from 'components/units'
-import Topics from 'components/topics'
+import Courses from 'components/courses/index'
+import Units from 'components/units/index'
+import Topics from 'components/topics/index'
 import HomePage from 'components/home-page'
 
 export const routes = [

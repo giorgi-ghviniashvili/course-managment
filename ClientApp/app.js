@@ -5,9 +5,13 @@ import store from './store'
 import { sync } from 'vuex-router-sync'
 import App from 'components/app-root'
 import { FontAwesomeIcon } from './icons'
+import BootstrapVue from 'bootstrap-vue'
+import Vuelidate from 'vuelidate'
 
 // Registration of global components
 Vue.component('icon', FontAwesomeIcon)
+Vue.use(BootstrapVue)
+Vue.use(Vuelidate)
 
 Vue.prototype.$http = axios
 

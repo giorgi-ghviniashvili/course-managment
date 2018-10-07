@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AutoMapper;
 
 namespace regents_new
 {
@@ -19,12 +20,21 @@ namespace regents_new
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Auto Mapper Configurations
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
             // Add framework services.
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // Simple example with dependency injection for a data provider.
-            services.AddSingleton<Providers.IWeatherProvider, Providers.WeatherProviderFake>();
+            //services.AddSingleton<Providers.IWeatherProvider, Providers.WeatherProviderFake>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
